@@ -1,6 +1,7 @@
+import sqlite3
 import customtkinter
 from customtkinter import *
-import subprocess
+
 
 customtkinter.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-green"
@@ -8,6 +9,10 @@ customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "gre
 correct_login = "user"
 correct_password = "password"
 
+connection = sqlite3.connect("apteka.db")  # Подставьте имя вашей базы данных SQLite
+cursor = connection.cursor()
+
+connection.commit()
 
 def open_second_window():
     first_window.destroy()
@@ -21,11 +26,25 @@ def open_second_window():
 
 
 def login_command():
-    if entry_1.get() == correct_login and entry_2.get() == correct_password:
+    username = entry_1.get()
+    password = entry_2.get()
+
+    # Выполняем SQL-запрос для выборки записи из таблицы "users" с заданным логином и паролем
+    cursor.execute("""
+        SELECT * FROM users WHERE login = ? AND password = ?
+    """, (username, password))
+    
+    print(cursor.fetchall())
+
+    # Получаем результат запроса
+    user = cursor.fetchone()
+
+    if user:
         open_second_window()
+        connection.close()
     else:
         print("Incorrect login or password")
-
+        connection.close()
 
 first_window = customtkinter.CTk()
 first_window.geometry("400x200")
