@@ -4,8 +4,9 @@ import sqlite3
 def main (page: ft.Page):
     page.title = "Apteka.By"
     page.theme_mode = 'dark'
-    page.vertical_alignment = ft.MainAxisAlignment
-    page.window_width = 500
+    page.vertical_alignment = ft.MainAxisAlignment.CENTER
+    page.horizontal_alignment = ft.MainAxisAlignment.CENTER
+    page.window_width = 700
     page.window_height = 500
     page.window_resizable = False
     
@@ -44,9 +45,19 @@ def main (page: ft.Page):
         
         cr.execute(f"SELECT * FROM users WHERE login = '{userlog.value}'AND password = '{userpass.value}'")
         if cr.fetchone() != None:
-            userlog.value = ''
-            userpass.value = ''
-            btnauth.text = 'Войдено'
+            page.clean()
+            page.navigation_bar.destinations=None
+            btnauth.on_click = page.add(menu)
+            page.navigation_bar = ft.NavigationBar(
+            destinations=[
+            ft.NavigationDestination(icon=ft.icons.STAR_HALF, label="Сотрудники"),
+            ft.NavigationDestination(icon=ft.icons.MEDICAL_SERVICES, label="Аптека"),
+            ft.NavigationDestination(icon=ft.icons.WAREHOUSE, label="Склад"),
+            ft.NavigationDestination(icon=ft.icons.PEOPLE, label="Поставщики"),
+            ft.NavigationDestination(icon=ft.icons.PENDING, label="Заказ"),
+            ft.NavigationDestination(icon=ft.icons.HOME, label="Выход")
+        ], on_change=menunavigator
+    )
             page.update()
         else:
             page.snack_bar = ft.SnackBar(ft.Text('Неверные данные!'))
@@ -63,6 +74,7 @@ def main (page: ft.Page):
     userpass = ft.TextField(label='Пароль', password=True, on_change=valid)
     btnreg = ft.OutlinedButton(text='Добавить', width=200, on_click=regisr, disabled=True )   
     btnauth = ft.OutlinedButton(text='Вход', width=200, on_click=auth, disabled=True )   
+    btnadmin = ft.OutlinedButton(text='Админ', width=200, on_click=auth, disabled=True )  
 
     panel_reg = ft.Row([
             ft.Column([
@@ -103,7 +115,25 @@ def main (page: ft.Page):
         ], on_change=navigator
     )
     
-    page.add(panel_reg)
     
+
+    menu = ft.Row([
+            ft.Column([
+                ft.Text(f"Добро пожаловать"),
+                
+
+                    ]      
+                )
+        ],
+        alignment=ft.MainAxisAlignment.CENTER     
+    )
+    
+    def menunavigator (e):
+        pass
+    
+    page.add(panel_autorise)  
+     
 ft.app(target=main)
     
+
+
