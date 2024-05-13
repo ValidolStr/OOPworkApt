@@ -1,6 +1,21 @@
 import flet as ft
 import sqlite3
 
+def fetch_data_from_database():
+    # Установка соединения с базой данных SQLite
+    conn = sqlite3.connect('apteka.db')
+    cursor = conn.cursor()
+
+    # Выполнение SQL-запроса для извлечения данных из таблицы
+    cursor.execute('SELECT * FROM users')
+    data = cursor.fetchall()
+
+    # Закрытие соединения с базой данных
+    cursor.close()
+    conn.close()
+
+    return data
+
 def main (page: ft.Page):
     page.title = "Apteka.By"
     page.theme_mode = 'dark'
@@ -47,7 +62,7 @@ def main (page: ft.Page):
         if cr.fetchone() != None:
             page.clean()
             page.navigation_bar.destinations=None
-            btnauth.on_click = page.add(menu)
+            btnauth.on_click = page.add(panel_hallo)
             page.navigation_bar = ft.NavigationBar(
             destinations=[
             ft.NavigationDestination(icon=ft.icons.STAR_HALF, label="Сотрудники"),
@@ -55,7 +70,6 @@ def main (page: ft.Page):
             ft.NavigationDestination(icon=ft.icons.WAREHOUSE, label="Склад"),
             ft.NavigationDestination(icon=ft.icons.PEOPLE, label="Поставщики"),
             ft.NavigationDestination(icon=ft.icons.PENDING, label="Заказ"),
-            ft.NavigationDestination(icon=ft.icons.HOME, label="Выход")
         ], on_change=menunavigator
     )
             page.update()
@@ -75,6 +89,16 @@ def main (page: ft.Page):
     btnreg = ft.OutlinedButton(text='Добавить', width=200, on_click=regisr, disabled=True )   
     btnauth = ft.OutlinedButton(text='Вход', width=200, on_click=auth, disabled=True )   
     btnadmin = ft.OutlinedButton(text='Админ', width=200, on_click=auth, disabled=True )  
+
+    panel_hallo = ft.Row([
+                ft.Column([
+                    ft.Text("Добро пожаловать"),
+                   ]      
+                    )
+            ],
+            alignment=ft.MainAxisAlignment.CENTER  
+                
+        )
 
     panel_reg = ft.Row([
             ft.Column([
@@ -114,12 +138,71 @@ def main (page: ft.Page):
             ft.NavigationDestination(icon=ft.icons.VERIFIED_USER_OUTLINED, label="Авторизация")
         ], on_change=navigator
     )
-    
-    
 
-    menu = ft.Row([
+   
+
+    
+    def menunavigator (e):
+        i = page.navigation_bar.selected_index
+        page.clean()
+        
+        if i == 0:  
+            page.add(personal_page)
+        elif i ==1: 
+            page.add(apteka_page)
+        elif i ==2:
+            page.add(sklad_page)
+        elif i ==3: 
+            page.add(postaw_page)
+        elif i ==4: 
+            page.add(zakaz_page)
+
+
+
+   # def tablr (e):
+
+    db = sqlite3.connect('apteka.db')
+    cr = db.cursor()
+    
+    cr.execute('SELECT * FROM users')
+    new_task = cr.fetchone()
+    db.commit()
+    db.close()
+
+    table = ft.DataTable(
+            columns=[
+                ft.DataColumn(ft.Text("id")),
+                ft.DataColumn(ft.Text("Логин")),
+                ft.DataColumn(ft.Text("Пароль")),
+            ],
+            rows=[
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text(new_task[0])),
+                        ft.DataCell(ft.Text(new_task[1])),
+                        ft.DataCell(ft.Text(new_task[2])),
+                    ],
+                ),
+                
+            ],
+        )
+        
+    
+            
+    personal_page = ft.Row([
             ft.Column([
-                ft.Text(f"Добро пожаловать"),
+                ft.Text(''),
+                table
+                ]      
+                )
+        ],
+        alignment=ft.MainAxisAlignment.CENTER     
+    )  
+    
+  
+    apteka_page = ft.Row([
+            ft.Column([
+                ft.Text(f"Аптека"),
                 
 
                     ]      
@@ -127,9 +210,45 @@ def main (page: ft.Page):
         ],
         alignment=ft.MainAxisAlignment.CENTER     
     )
+         
     
-    def menunavigator (e):
-        pass
+    
+    sklad_page = ft.Row([
+            ft.Column([
+                ft.Text(f"Склад"),
+                
+
+                    ]      
+                )
+        ],
+        alignment=ft.MainAxisAlignment.CENTER     
+    )
+       
+    
+    postaw_page = ft.Row([
+            ft.Column([
+                ft.Text(f"Поставки"),
+                
+
+                    ]      
+                )
+        ],
+        alignment=ft.MainAxisAlignment.CENTER     
+    )
+        
+        
+    zakaz_page = ft.Row([
+            ft.Column([
+                ft.Text(f"Заказ"),
+                
+
+                    ]      
+                )
+        ],
+        alignment=ft.MainAxisAlignment.CENTER     
+    )
+        
+    
     
     page.add(panel_autorise)  
      
