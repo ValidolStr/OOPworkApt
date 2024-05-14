@@ -1,4 +1,5 @@
 import flet as ft
+from flet import *
 import sqlite3
 
 def fetch_data_from_database():
@@ -88,7 +89,7 @@ def main (page: ft.Page):
     userpass = ft.TextField(label='Пароль', password=True, on_change=valid)
     btnreg = ft.OutlinedButton(text='Добавить', width=200, on_click=regisr, disabled=True )   
     btnauth = ft.OutlinedButton(text='Вход', width=200, on_click=auth, disabled=True )   
-    btnadmin = ft.OutlinedButton(text='Админ', width=200, on_click=auth, disabled=True )  
+    
 
     panel_hallo = ft.Row([
                 ft.Column([
@@ -138,16 +139,15 @@ def main (page: ft.Page):
             ft.NavigationDestination(icon=ft.icons.VERIFIED_USER_OUTLINED, label="Авторизация")
         ], on_change=navigator
     )
-
-   
-
     
     def menunavigator (e):
         i = page.navigation_bar.selected_index
         page.clean()
         
-        if i == 0:  
-            page.add(personal_page)
+        if i == 0:                 
+            page.add(personal_page),
+            table.rows.clear()
+            loaddata()
         elif i ==1: 
             page.add(apteka_page)
         elif i ==2:
@@ -156,45 +156,64 @@ def main (page: ft.Page):
             page.add(postaw_page)
         elif i ==4: 
             page.add(zakaz_page)
-
-
-
-   # def tablr (e):
-
-    db = sqlite3.connect('apteka.db')
-    cr = db.cursor()
-    
-    cr.execute('SELECT * FROM users')
-    new_task = cr.fetchone()
-    db.commit()
-    db.close()
-
-    table = ft.DataTable(
-            columns=[
-                ft.DataColumn(ft.Text("id")),
-                ft.DataColumn(ft.Text("Логин")),
-                ft.DataColumn(ft.Text("Пароль")),
-            ],
-            rows=[
-                ft.DataRow(
-                    cells=[
-                        ft.DataCell(ft.Text(new_task[0])),
-                        ft.DataCell(ft.Text(new_task[1])),
-                        ft.DataCell(ft.Text(new_task[2])),
-                    ],
-                ),
-                
-            ],
-        )
+  
+    def loaddata():
+        db = sqlite3.connect('apteka.db')
+        cr = db.cursor()  
+        cr.execute('SELECT * FROM users')
+        new_task = cr.fetchall() 
         
+        columns = [column[0] for column in cr.description]
+        rows = [dict(zip(columns, row))for row in new_task]
+        
+        for row in rows:
+            table.rows.append(
+                DataRow(
+                    cells=[
+                        DataCell(str(row['id'])),
+                        DataCell(str(row['login'])),
+                        DataCell(str(row['password'])),
+                        DataCell(
+                            Row([
+                                IconButton("del",icon_color="red",data=row,on_click=btndelete)
+                            ])
+                            ),
+                    ]
+                )
+            )
+        page.update()        
+        db.commit()
+        db.close()
+  
+    btnadd = ft.OutlinedButton(text='Добавить', width=200, on_click=loaddata )  
+    btnupdate = ft.OutlinedButton(text='Изменить', width=200, on_click=auth, disabled=True ) 
+    btndelete = ft.OutlinedButton(text='Удалить', width=200, on_click=auth, disabled=True ) 
     
+   # rownew = (ft.DataCell(ft.Text('')), ft.DataCell(ft.Text('')), ft.DataCell(ft.Text('')))
+
+    table =DataTable(
+            columns=[
+                DataColumn(ft.Text("id")),
+                DataColumn(ft.Text("Логин")),
+                DataColumn(ft.Text("Пароль")),
+                DataColumn(ft.Text("делет"))
+            ],
+            rows=[]
+        )
+    
+    
+      
             
     personal_page = ft.Row([
             ft.Column([
-                ft.Text(''),
-                table
-                ]      
-                )
+                ft.Text('Персонал'),
+                table             
+                ]),
+            ft.Column([
+                btnadd,
+                btnupdate,
+                btndelete
+            ])
         ],
         alignment=ft.MainAxisAlignment.CENTER     
     )  
