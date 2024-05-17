@@ -22,7 +22,7 @@ def main (page: ft.Page):
     page.theme_mode = 'dark'
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.MainAxisAlignment.CENTER
-    page.window_width = 800
+    page.window_width = 1000
     page.window_height = 500
     page.window_resizable = False
     #page.scroll = "auto"
@@ -69,9 +69,7 @@ def main (page: ft.Page):
             destinations=[
             ft.NavigationDestination(icon=ft.icons.STAR_HALF, label="Сотрудники"),
             ft.NavigationDestination(icon=ft.icons.MEDICAL_SERVICES, label="Аптека"),
-            ft.NavigationDestination(icon=ft.icons.WAREHOUSE, label="Склад"),
             ft.NavigationDestination(icon=ft.icons.PEOPLE, label="Поставщики"),
-            ft.NavigationDestination(icon=ft.icons.PENDING, label="Заказ"),
         ], on_change=menunavigator
     )
             page.update()
@@ -151,16 +149,11 @@ def main (page: ft.Page):
         elif i ==1: 
             page.add(apteka_page)
         elif i ==2:
-            page.add(sklad_page)
-        elif i ==3: 
             page.add(postaw_page)
-        elif i ==4: 
-            page.add(zakaz_page)
-  
     
     conn = sqlite3.connect('apteka.db')
     cursor = conn.cursor()
-
+#userkabinet
     # Получение данных из таблицы
     cursor.execute("SELECT * FROM users")
     data = cursor.fetchall()
@@ -204,24 +197,24 @@ def main (page: ft.Page):
         page.update()
 
           
-    text_field_1 = ft.TextField(label="Логин", read_only=True, width=150) 
-    text_field_2 = ft.TextField(label="Пароль", read_only=True, width=150)
+    text_field_1 = ft.TextField(label="Логин",  width=150) 
+    text_field_2 = ft.TextField(label="Пароль", width=150)
     new_value_1 = text_field_1.value
     new_value_2 = text_field_2.value
     
     selected_row_id = None
-    def выбрать_ячейку(e, row_id):
 
+# Функция для выбора ячейки
+    def выбрать_ячейку(e, row_id, col_index):
         global selected_row_id
         selected_row_id = row_id
         # Получение значения из выбранной строки
         row_data = data[row_id-1]
 
         # Запись данных в текстовые поля
-        text_field_1.value = str(row_data[1])  # Предполагаем, что первый столбец - column1
-        text_field_2.value = str(row_data[2])  # Предполагаем, что второй столбец - column2
-        text_field_1.read_only = False    
-        text_field_2.read_only = False 
+        text_field_1.value = str(row_data[1])  # Предполагаем, что второй столбец - значение 1
+        text_field_2.value = str(row_data[2])  # Предполагаем, что третий столбец - значение 2
+
         # Обновление текстовых полей
         text_field_1.update()
         text_field_2.update()
@@ -229,27 +222,27 @@ def main (page: ft.Page):
     def update(e):
         global selected_row_id
         if selected_row_id is not None:
-        # Получение новых значений из текстовых полей
+            # Получение новых значений из текстовых полей
             new_value_1 = text_field_1.value
             new_value_2 = text_field_2.value
 
-        # Обновление данных в базе данных
-        cursor.execute("UPDATE users SET login = ?, password = ? WHERE id = ?", (new_value_1, new_value_2, selected_row_id-1))
-        conn.commit()
+            # Обновление данных в базе данных
+            cursor.execute("UPDATE users SET login = ?, password = ? WHERE id = ?", (new_value_1, new_value_2, selected_row_id))
+            conn.commit()
 
-        # Обновление DataTable
-        table.rows = [
-            ft.DataRow(
-                cells=[
-                    ft.DataCell(ft.Text(str(cell)), on_tap=lambda e, row_id=row[0], col_index=i: выбрать_ячейку(e, row_id, col_index))
-                    for i, cell in enumerate(row)
-                ] + [
-                    ft.DataCell(ft.ElevatedButton(text="Удалить", on_click=lambda e, row_id=row[0]: удалить_строку(e, row_id)))
-                ]
-            )
-            for row in cursor.execute("SELECT * FROM users").fetchall()
-        ]
-        page.update()
+            # Обновление DataTable
+            table.rows = [
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text(str(cell)), on_tap=lambda e, row_id=row[0], col_index=i: выбрать_ячейку(e, row_id, col_index))
+                        for i, cell in enumerate(row)
+                    ] + [
+                        ft.DataCell(ft.ElevatedButton(text="Удалить", on_click=lambda e, row_id=row[0]: удалить_строку(e, row_id)))
+                    ]
+                )
+                for row in cursor.execute("SELECT * FROM users").fetchall()
+            ]
+            page.update()
             
     personal_page = ft.Row([
     ft.Column([
@@ -264,7 +257,7 @@ def main (page: ft.Page):
     alignment=ft.MainAxisAlignment.CENTER,
     
     )
-    
+    #userkabinet
   
     apteka_page = ft.Row([
             ft.Column([
@@ -277,42 +270,42 @@ def main (page: ft.Page):
         alignment=ft.MainAxisAlignment.CENTER     
     )
          
-    
-    
-    sklad_page = ft.Row([
-            ft.Column([
-                ft.Text(f"Склад"),
-                
 
-                    ]      
-                )
-        ],
-        alignment=ft.MainAxisAlignment.CENTER     
-    )
-       
+    cursor.execute("SELECT * FROM products")
+    data1 = cursor.fetchall()
+
+    # Создание заголовков колонок
+    columns = [ft.DataColumn(ft.Text(header[0])) for header in cursor.description]
+    columns.append(ft.DataColumn(ft.Text("Удаление")))
+    # Создание DataTable
+    
+    tableprod = ft.DataTable(
+    columns=columns,
+    rows=[
+        ft.DataRow(
+            cells=[
+                ft.DataCell(ft.Text(str(cell)), on_tap=lambda e, row_id=row[0], col_index=i: выбрать_ячейку(e, row_id, col_index))
+                for i, cell in enumerate(row)
+            ] + [
+                ft.DataCell(ft.ElevatedButton(text="Удалить", on_click=lambda e, row_id=row[0]: удалить_строку(e, row_id)))
+            ]
+        )
+        for row in data1
+    ]
+)    
     
     postaw_page = ft.Row([
             ft.Column([
-                ft.Text(f"Поставки"),
-                
+                ft.Text(f"Поставщики"),
+                tableprod
 
-                    ]      
+                    ], scroll='always', height=300
                 )
-        ],
-        alignment=ft.MainAxisAlignment.CENTER     
+        ],scroll='always', alignment=ft.MainAxisAlignment.CENTER     
     )
         
         
-    zakaz_page = ft.Row([
-            ft.Column([
-                ft.Text(f"Заказ"),
-                
 
-                    ]      
-                )
-        ],
-        alignment=ft.MainAxisAlignment.CENTER     
-    )
         
     
     
