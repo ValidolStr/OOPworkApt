@@ -18,7 +18,7 @@ def open_cabinet_window():
     root.withdraw()
     cabinet_window = tk.Toplevel(root)
     cabinet_window.title("Кабинет")
-    cabinet_window.geometry("800x700")
+    cabinet_window.geometry("500x400")
 
     def close_cabinet_window():
         cabinet_window.destroy()
@@ -109,12 +109,6 @@ def open_cabinet_window():
     # Закрытие соединения с базой данных
     conn.close()
 
-    delete_button = tk.Button(cabinet_window, text="Удалить", command=delete_selected_row, width=20, height=5)
-    delete_button.pack(pady=20)
-
-    back_button = tk.Button(cabinet_window, text="Назад", command=close_cabinet_window, width=20, height=5)
-    back_button.pack(pady=20)
-
 def open_goods_window():
     global root
     root.withdraw()
@@ -187,6 +181,36 @@ def open_goods_window():
             # Закрытие соединения с базой данных
             conn.close()
 
+    def calculate_total_cost():
+        global root
+        root.withdraw()
+        total_cost_window = tk.Toplevel(root)
+        total_cost_window.title("Сумарная стоимость товаров")
+        total_cost_window.geometry("400x200")
+
+        def close_total_cost_window():
+            total_cost_window.destroy()
+            #root.deiconify()
+
+        # Подключение к базе данных
+        conn = sqlite3.connect("apteka.db")
+        cursor = conn.cursor()
+
+        # Получение сумарной стоимости товаров
+        cursor.execute("SELECT SUM(price * quantity) FROM products")
+        total_cost = cursor.fetchone()[0]
+
+        # Отображение сумарной стоимости
+        total_cost_label = tk.Label(total_cost_window, text=f"Сумарная стоимость: {total_cost}", font=("Arial", 14))
+        total_cost_label.pack(pady=50)
+
+        # Кнопка "Назад"
+        back_button = tk.Button(total_cost_window, text="Назад", command=close_total_cost_window, width=20, height=5)
+        back_button.pack(pady=20)
+
+        # Закрытие соединения с базой данных
+        conn.close()
+
     def edit_selected_row():
         selected_item = tree.selection()
         if selected_item:
@@ -204,37 +228,37 @@ def open_goods_window():
             # Поля для ввода
             name_label = tk.Label(edit_window, text="Название:")
             name_label.grid(row=0, column=0, padx=5, pady=5)
-            name_entry = tk.Entry(edit_window)
+            name_entry = tk.Entry(edit_window, width=50)
             name_entry.insert(0, current_values[1])  # Заполняем поле ввода текущим значением
             name_entry.grid(row=0, column=1, padx=5, pady=5)
 
             price_label = tk.Label(edit_window, text="Цена:")
             price_label.grid(row=1, column=0, padx=5, pady=5)
-            price_entry = tk.Entry(edit_window)
+            price_entry = tk.Entry(edit_window, width=50)
             price_entry.insert(0, current_values[3])
             price_entry.grid(row=1, column=1, padx=5, pady=5)
 
             pacing_label = tk.Label(edit_window, text="Фасовка:")
             pacing_label.grid(row=2, column=0, padx=5, pady=5)
-            pacing_entry = tk.Entry(edit_window)
+            pacing_entry = tk.Entry(edit_window, width=50)
             pacing_entry.insert(0, current_values[2])
             pacing_entry.grid(row=2, column=1, padx=5, pady=5)
             
             quantity_label = tk.Label(edit_window, text="Количество:")
             quantity_label.grid(row=3, column=0, padx=5, pady=5)
-            quantity_entry = tk.Entry(edit_window)
+            quantity_entry = tk.Entry(edit_window, width=50)
             quantity_entry.insert(0, current_values[5])
             quantity_entry.grid(row=3, column=1, padx=5, pady=5)
             
             posta_label = tk.Label(edit_window, text="Поставщик:")
             posta_label.grid(row=4, column=0, padx=5, pady=5)
-            posta_entry = tk.Entry(edit_window)
+            posta_entry = tk.Entry(edit_window, width=50)
             posta_entry.insert(0, current_values[4])
             posta_entry.grid(row=4, column=1, padx=5, pady=5)
             
             srok_label = tk.Label(edit_window, text="Срок годности:")
             srok_label.grid(row=5, column=0, padx=5, pady=5)
-            srok_entry = tk.Entry(edit_window)
+            srok_entry = tk.Entry(edit_window, width=50)
             srok_entry.insert(0, current_values[6])
             srok_entry.grid(row=5, column=1, padx=5, pady=5)
 
@@ -246,7 +270,6 @@ def open_goods_window():
                 new_pacing = pacing_entry.get()
                 new_quantity = quantity_entry.get()
                 new_posta = posta_entry.get()
-               # new_srok = srok_entry.get()
 
                 # Подключение к базе данных
                 conn = sqlite3.connect("apteka.db")
@@ -322,7 +345,7 @@ def open_goods_window():
     search_entry.bind("<KeyRelease>", search_products)  # Вызов поиска при каждом изменении текста
 
     button_frame = tk.Frame(goods_window)
-    button_frame.pack(pady=20)
+    button_frame.pack(pady=30)
 
     # Кнопка редактирования
     edit_button = tk.Button(button_frame, text="Редактировать", command=edit_selected_row, width=20, height=5)
@@ -330,6 +353,9 @@ def open_goods_window():
 
     delete_button = tk.Button(button_frame, text="Удалить", command=delete_selected_row, width=20, height=5)
     delete_button.pack(side="left", padx=10)
+    
+    total_cost_button = tk.Button(button_frame, text="Сумарная стоимость", command=calculate_total_cost, width=20, height=5)
+    total_cost_button.pack(side="left", pady=50)
 
     back_button = tk.Button(button_frame, text="Назад", command=close_goods_window, width=20, height=5)
     back_button.pack(side="left", padx=10)
