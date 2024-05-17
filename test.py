@@ -1,152 +1,112 @@
 import flet as ft
-from flet import *
+import sqlite3
 
+conn = sqlite3.connect('apteka.db')
+cursor = conn.cursor()
 
+# Получение данных из таблицы
+cursor.execute("SELECT * FROM users")
+data = cursor.fetchall()
 
+# Создание заголовков колонок
+columns = [ft.DataColumn(ft.Text(header[0])) for header in cursor.description]
 
-class App(UserControl):
-    first_name = ft.TextField(label="First name", text_align=ft.TextAlign.RIGHT, width=185, height=50)
-    last_name = ft.TextField(label="Last name", text_align=ft.TextAlign.RIGHT, width=185, height=50)
-    Age = ft.TextField(label="Age", text_align=ft.TextAlign.RIGHT, width=185, height=50)
+# Добавление столбца с кнопкой "Удалить"
+columns.append(ft.DataColumn(ft.Text("Действия")))
 
-    my_table = ft.DataTable(
-        columns=[
-            ft.DataColumn(ft.Text("First_name")),
-            ft.DataColumn(ft.Text("Last_name")),
-            ft.DataColumn(ft.Text("Age"), numeric=True),
-        ],
-        rows=[],
-
-    )
-
-    def add_btn(self, e):
-        new_row = ft.DataRow(
+# Создание DataTable
+table = ft.DataTable(
+    columns=columns,
+    rows=[
+        ft.DataRow(
             cells=[
-                ft.DataCell(ft.Text(self.first_name.value)),
-                ft.DataCell(ft.Text(self.last_name.value)),
-                ft.DataCell(ft.Text(self.Age.value)),
-            ],
+                ft.DataCell(ft.Text(str(cell)), on_tap=lambda e, row_id=row[0], col_index=i: выбрать_ячейку(e, row_id, col_index))
+                for i, cell in enumerate(row)
+            ] + [
+                ft.DataCell(ft.ElevatedButton(text="Удалить", on_click=lambda e, row_id=row[0]: удалить_строку(e, row_id)))
+            ]
         )
+        for row in data
+    ]
+)
 
-        self.my_table.rows.append(new_row)
+# Текстовые поля для отображения данных
+text_field_1 = ft.TextField(label="Значение 1", read_only=True)
+text_field_2 = ft.TextField(label="Значение 2", read_only=True)
 
-        self.my_table.update()
+# Функция для выбора ячейки
+def выбрать_ячейку(e, row_id, col_index):
+    # Получение значения из выбранной ячейки
+    value = data[row_id][col_index]
 
-    def recive_btn(self, e):
+    # Обновление текстовых полей
+    if col_index == 0:
+        text_field_1.value = str(value)
+    elif col_index == 1:
+        text_field_2.value = str(value)
+    text_field_1.update()
+    text_field_2.update()
 
-        data = self.my_table.rows[0].cells
-        print(data)
+# Функция для удаления строки
+def удалить_строку(e, id):
+    # Удаление строки из базы данных
+    cursor.execute("DELETE FROM users WHERE id = ?", (id,))
+    conn.commit()
 
+    # Обновление DataTable
+    table.rows = [
+        ft.DataRow(
+            cells=[
+                ft.DataCell(ft.Text(str(cell)), on_tap=lambda e, row_id=row[0], col_index=i: выбрать_ячейку(e, row_id, col_index))
+                for i, cell in enumerate(row)
+            ] + [
+                ft.DataCell(ft.ElevatedButton(text="Удалить", on_click=lambda e, row_id=row[0]: удалить_строку(e, row_id)))
+            ]
+        )
+        for row in cursor.execute("SELECT * FROM users").fetchall()
+    ]
+    page.update()
 
+# Функция для обновления данных в таблице
+def обновить_таблицу(e):
+        # Получение новых значений из текстовых полей
+        new_value_1 = text_field_1.value
+        new_value_2 = text_field_2.value
 
-    def build(self):
-        return Column(
-            controls=[
-                Container(
-                    width=Container.width.fget,
-                    # width=1200,
-                    height=300,
+        # Обновление данных в базе данных
+        # ... (ваш код обновления данных в базе данных)
 
-                   
-                    # bgcolor=colors.AMBER_300,
-                    bgcolor="#ffffe0",
-                    border_radius=border_radius.all(5),
+        # Обновление DataTable
+        table.rows = [
+            ft.DataRow(
+                cells=[
+                    ft.DataCell(ft.Text(str(cell)), on_tap=lambda e, row_id=row[0], col_index=i: выбрать_ячейку(e, row_id, col_index))
+                    for i, cell in enumerate(row)
+                ] + [
+                    ft.DataCell(ft.ElevatedButton(text="Удалить", on_click=lambda e, row_id=row[0]: удалить_строку(e, row_id)))
+                ]
+            )
+            for row in cursor.execute("SELECT * FROM users").fetchall()
+        ]
+        page.update()
 
-                    content=Column(
-                        controls=[
-                            Row(
-                                # alignment="spaceAround",
-                                spacing=2,
-                                controls=[
-                                    # self.txt_number
-                                    Container(
-                                        margin=margin.only(top=10, right=10),
-                                        width=180,
-                                        height=50,
-                                        bgcolor="#ffffe0",
-                                        content=Column(controls=[self.first_name])
+# Создание страницы Flet
+page = ft.Page()
 
-                                    ),
-                                    Container(
-                                        margin=margin.only(top=10, right=5),
-                                        width=185,
-                                        height=50,
-                                        bgcolor="#ffffe0",
-                                        content=Column(controls=[self.last_name])
-
-                                    ),
-                                    Container(
-                                        margin=margin.only(top=10, right=5),
-                                        width=185,
-                                        height=50,
-                                        bgcolor="#ffffe0",
-                                        content=Column(controls=[self.Age])
-
-                                    ),
-
-
-                                ],
-
-                            ),                     
-                      
-                            ElevatedButton(
-                                text="Elevated button1",
-                                bgcolor="Green",
-                                width=200,
-                                height=40,
-                                on_click=self.add_btn,
-                            ),
-
-                        ],
-                    ),
-
-                ),
-                Container(
-                    width=Container.width.fget,
-                    # width=1200,
-                    height=300,
-
-
-                    bgcolor="#ffffe0",
-                    border_radius=border_radius.all(5),
-
-                    content=Column(
-
-                        auto_scroll=True,
-                        controls=[
-                            self.my_table,
-
-                            ElevatedButton(text="Elevated button2", bgcolor="Green", width=200, height=40,
-
-                                           on_click=self.recive_btn, ###
-
-
-                                           ),
-
-                        ],
-                    ),
+# Добавление элементов на страницу
+page.add(
+        ft.Column(
+            [
+                table,
+                ft.Row(
+                    [
+                        text_field_1,
+                        text_field_2,
+                        ft.ElevatedButton(text="Обновить", on_click=обновить_таблицу),
+                    ]
                 ),
             ]
         )
+    )
 
-
-def main(page: Page):
-    
-    page.title = "flet tutorial"
-
-    page.rtl = True
-   
-    page.window_width = 1200
-    page.window_height = 700
-
-    
-    page.window_resizable = False
-
-    page.bgcolor = "#e249fc"
-
-    
-    page.update()
-
-    
-    app = App()
-    page.add(app)
+ft.app(target=page)

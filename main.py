@@ -22,9 +22,10 @@ def main (page: ft.Page):
     page.theme_mode = 'dark'
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.MainAxisAlignment.CENTER
-    page.window_width = 700
+    page.window_width = 800
     page.window_height = 500
     page.window_resizable = False
+    #page.scroll = "auto"
     
     def regisr (e):
         db = sqlite3.connect('apteka.db')
@@ -146,8 +147,7 @@ def main (page: ft.Page):
         
         if i == 0:                 
             page.add(personal_page),
-            table.rows.clear()
-            loaddata()
+            table.update()
         elif i ==1: 
             page.add(apteka_page)
         elif i ==2:
@@ -157,66 +157,113 @@ def main (page: ft.Page):
         elif i ==4: 
             page.add(zakaz_page)
   
-    def loaddata():
-        db = sqlite3.connect('apteka.db')
-        cr = db.cursor()  
-        cr.execute('SELECT * FROM users')
-        new_task = cr.fetchall() 
-        
-        columns = [column[0] for column in cr.description]
-        rows = [dict(zip(columns, row))for row in new_task]
-        
-        for row in rows:
-            table.rows.append(
-                DataRow(
-                    cells=[
-                        DataCell(str(row['id'])),
-                        DataCell(str(row['login'])),
-                        DataCell(str(row['password'])),
-                        DataCell(
-                            Row([
-                                IconButton("del",icon_color="red",data=row,on_click=btndelete)
-                            ])
-                            ),
-                    ]
-                )
-            )
-        page.update()        
-        db.commit()
-        db.close()
-  
-    btnadd = ft.OutlinedButton(text='Добавить', width=200, on_click=loaddata )  
-    btnupdate = ft.OutlinedButton(text='Изменить', width=200, on_click=auth, disabled=True ) 
-    btndelete = ft.OutlinedButton(text='Удалить', width=200, on_click=auth, disabled=True ) 
     
-   # rownew = (ft.DataCell(ft.Text('')), ft.DataCell(ft.Text('')), ft.DataCell(ft.Text('')))
+    conn = sqlite3.connect('apteka.db')
+    cursor = conn.cursor()
 
-    table =DataTable(
-            columns=[
-                DataColumn(ft.Text("id")),
-                DataColumn(ft.Text("Логин")),
-                DataColumn(ft.Text("Пароль")),
-                DataColumn(ft.Text("делет"))
-            ],
-            rows=[]
+    # Получение данных из таблицы
+    cursor.execute("SELECT * FROM users")
+    data = cursor.fetchall()
+
+    # Создание заголовков колонок
+    columns = [ft.DataColumn(ft.Text(header[0])) for header in cursor.description]
+    columns.append(ft.DataColumn(ft.Text("Удаление")))
+    # Создание DataTable
+    table = ft.DataTable(
+    columns=columns,
+    rows=[
+        ft.DataRow(
+            cells=[
+                ft.DataCell(ft.Text(str(cell)), on_tap=lambda e, row_id=row[0], col_index=i: выбрать_ячейку(e, row_id, col_index))
+                for i, cell in enumerate(row)
+            ] + [
+                ft.DataCell(ft.ElevatedButton(text="Удалить", on_click=lambda e, row_id=row[0]: удалить_строку(e, row_id)))
+            ]
         )
+        for row in data
+    ]
+)
     
+    def удалить_строку(e, id):
+    # Удаление строки из базы данных
+        cursor.execute("DELETE FROM users WHERE id = ?", (id,))
+        conn.commit()
+
+        # Обновление DataTable
+        table.rows = [
+            ft.DataRow(
+                cells=[
+                    ft.DataCell(ft.Text(str(cell)), on_tap=lambda e, row_id=row[0], col_index=i: выбрать_ячейку(e, row_id, col_index))
+                    for i, cell in enumerate(row)
+                ] + [
+                    ft.DataCell(ft.ElevatedButton(text="Удалить", on_click=lambda e, row_id=row[0]: удалить_строку(e, row_id)))
+                ]
+            )
+            for row in cursor.execute("SELECT * FROM users").fetchall()
+        ]
+        page.update()
+
+          
+    text_field_1 = ft.TextField(label="Логин", read_only=True, width=150) 
+    text_field_2 = ft.TextField(label="Пароль", read_only=True, width=150)
+    new_value_1 = text_field_1.value
+    new_value_2 = text_field_2.value
     
-      
+    selected_row_id = None
+    def выбрать_ячейку(e, row_id):
+
+        global selected_row_id
+        selected_row_id = row_id
+        # Получение значения из выбранной строки
+        row_data = data[row_id-1]
+
+        # Запись данных в текстовые поля
+        text_field_1.value = str(row_data[1])  # Предполагаем, что первый столбец - column1
+        text_field_2.value = str(row_data[2])  # Предполагаем, что второй столбец - column2
+        text_field_1.read_only = False    
+        text_field_2.read_only = False 
+        # Обновление текстовых полей
+        text_field_1.update()
+        text_field_2.update()
+    
+    def update(e):
+        global selected_row_id
+        if selected_row_id is not None:
+        # Получение новых значений из текстовых полей
+            new_value_1 = text_field_1.value
+            new_value_2 = text_field_2.value
+
+        # Обновление данных в базе данных
+        cursor.execute("UPDATE users SET login = ?, password = ? WHERE id = ?", (new_value_1, new_value_2, selected_row_id-1))
+        conn.commit()
+
+        # Обновление DataTable
+        table.rows = [
+            ft.DataRow(
+                cells=[
+                    ft.DataCell(ft.Text(str(cell)), on_tap=lambda e, row_id=row[0], col_index=i: выбрать_ячейку(e, row_id, col_index))
+                    for i, cell in enumerate(row)
+                ] + [
+                    ft.DataCell(ft.ElevatedButton(text="Удалить", on_click=lambda e, row_id=row[0]: удалить_строку(e, row_id)))
+                ]
+            )
+            for row in cursor.execute("SELECT * FROM users").fetchall()
+        ]
+        page.update()
             
     personal_page = ft.Row([
-            ft.Column([
-                ft.Text('Персонал'),
-                table             
-                ]),
-            ft.Column([
-                btnadd,
-                btnupdate,
-                btndelete
-            ])
-        ],
-        alignment=ft.MainAxisAlignment.CENTER     
-    )  
+    ft.Column([
+        table,  # Ваша таблица
+    ], scroll='always', width=400, height=300),  # Добавляем скроллинг к колонке с таблицей
+    ft.Column([
+        text_field_1,
+        text_field_2, 
+        ft.ElevatedButton(text="Обновить", on_click=update)
+    ],)
+    ],
+    alignment=ft.MainAxisAlignment.CENTER,
+    
+    )
     
   
     apteka_page = ft.Row([
